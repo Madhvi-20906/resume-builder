@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>folio.ai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.34.0/webfont/tabler-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --ink: #1a1a2e;
+      --paper: #faf9f6;
+      --accent: #d85a30;
+      --accent2: #1D9E75;
+      --muted: #888780;
+      --surface: #ffffff;
+      --border: rgba(0, 0, 0, 0.09);
+      --bg-canvas: #e8e5de;
+      --font-heading: 'DM Serif Display', serif;
+      --font-body: 'DM Sans', sans-serif;
+      --resume-accent: #d85a30;
+      --resume-header-bg: #1a1a2e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-canvas);
+      color: var(--ink);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* --- Navbar --- */
+    .navbar {
+      background-color: var(--ink);
+      color: var(--surface);
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .nav-logo {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-logo .dot {
+      color: var(--accent);
+      font-size: 1rem;
+      margin-right: 6px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-tab {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .nav-tab:hover {
+      color: var(--surface);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-tab.active {
+      color: var(--surface);
+      background: rgba(255, 255, 255, 0.15);
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: var(--surface);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-ai {
+      background-color: var(--accent2);
+      color: var(--surface);
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+    }
+
+    .btn-ai:hover {
+      opacity: 0.9;
+    }
+
+    .btn-ai:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* --- Layout --- */
+    .app-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* --- Sidebar --- */
+    .sidebar {
+      width: 300px;
+      background-color: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar.hidden {
+      display: none;
+    }
+
+    details {
+      border-bottom: 1px solid var(--border);
+      background-color: var(--paper);
+    }
+
+    summary {
+      padding: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      content: '\ea5f';
+      font-family: 'tabler-icons';
+      transition: transform 0.2s;
+      color: var(--muted);
+    }
+
+    details[open] summary::after {
+      transform: rotate(180deg);
+    }
+
+    .section-content {
+      padding: 0 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background-color: var(--paper);
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      background-color: var(--surface);
+      transition: border-color 0.2s;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-row>* {
+      flex: 1;
+    }
+
+    .btn-dashed {
+      border: 1px dashed var(--border);
+      background: transparent;
+      color: var(--muted);
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      width: 100%;
+      margin-top: 4px;
+      font-size: 0.85rem;
+    }
+
+    .btn-dashed:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .dynamic-item {
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background: var(--surface);
+      position: relative;
+    }
+
+    .btn-remove {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .btn-remove:hover {
+      color: var(--accent);
+    }
+
+    /* --- Canvas Area --- */
+    .canvas-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 40px;
+      position: relative;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* --- Resume Preview --- */
+    .resume-sheet {
+      background: var(--surface);
+      width: 680px;
+      min-height: 960px;
+      margin: 0 auto;
+      box-shadow: 0 4px 40px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .resume-header {
+      background-color: var(--ink);
+      color: var(--surface);
+      padding: 32px 40px;
+    }
+
+    .resume-name {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      margin-bottom: 4px;
+    }
+
+    .resume-subtitle {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .resume-contact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.8);
+      align-items: center;
+    }
+
+    .resume-contact i {
+      margin-right: 4px;
+      opacity: 0.8;
+    }
+
+    .contact-dot {
+      color: var(--resume-accent);
+      font-size: 0.5rem;
+    }
+
+    .resume-body {
+      display: flex;
+      flex: 1;
+    }
+
+    .resume-main {
+      flex: 1;
+      padding: 32px 40px;
+    }
+
+    .resume-aside {
+      width: 220px;
+      background-color: var(--paper);
+      padding: 32px 24px;
+      border-left: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--resume-accent);
+      font-weight: 700;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--resume-accent);
+      padding-bottom: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .preview-section {
+      margin-bottom: 24px;
+    }
+
+    .preview-text {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--ink);
+      white-space: pre-wrap;
+    }
+
+    .entry {
+      margin-bottom: 16px;
+    }
+
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .entry-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .entry-date {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .entry-subtitle {
+      font-style: italic;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pill {
+      background: var(--bg-canvas);
+      color: var(--ink);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      border: 1px solid var(--border);
+    }
+
+    /* --- Portfolio Tab --- */
+    .portfolio-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .project-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .project-card-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .project-card-tech {
+      margin-bottom: 16px;
+    }
+
+    .project-card-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .tech-pill {
+      background: #eaf3de;
+      color: #3B6D11;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      display: inline-block;
+      margin-right: 6px;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* --- AI Coach Tab --- */
+    .coach-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 120px);
+    }
+
+    .coach-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .coach-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+    }
+
+    .badge-green {
+      background: #eaf3de;
+      color: #3B6D11;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .coach-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 24px;
+      background: var(--paper);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .action-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 12px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-body);
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .action-btn i {
+      font-size: 1.5rem;
+      color: var(--accent2);
+    }
+
+    .chat-feed {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chat-message {
+      background: var(--ink);
+      color: var(--surface);
+      padding: 16px 20px;
+      border-radius: 12px;
+      line-height: 1.5;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      max-width: 85%;
+    }
+
+    .chat-user {
+      background: var(--paper);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      align-self: flex-end;
+    }
+
+    .coach-input {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      background: var(--surface);
+    }
+
+    .coach-input input {
+      flex: 1;
+      padding: 12px 16px;
+    }
+
+    .btn-ask {
+      background: var(--ink);
+      color: var(--surface);
+      border: none;
+      padding: 0 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-ask:hover {
+      background: #2a2a4a;
+    }
+
+    .btn-ask:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* --- Settings Modal --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .modal-overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      width: 460px;
+      max-width: 95vw;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      transform: translateY(16px);
+      transition: transform 0.25s;
+    }
+    .modal-overlay.visible .modal-card {
+      transform: translateY(0);
+    }
+    .modal-title {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+    .modal-subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .modal-subtitle a {
+      color: var(--accent2);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .modal-input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .modal-input-wrap input {
+      padding-right: 40px;
+      font-size: 0.9rem;
+    }
+    .modal-toggle-vis {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px;
+    }
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .btn-ghost {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .btn-ghost:hover { border-color: var(--ink); color: var(--ink); }
+    .key-status {
+      font-size: 0.8rem;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: none;
+    }
+    .key-status.ok  { background: #eaf3de; color: #3B6D11; display: block; }
+    .key-status.err { background: #fdecea; color: #c0392b; display: block; }
+    .btn-settings {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.7);
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-settings:hover {
+      border-color: rgba(255,255,255,0.5);
+      color: #fff;
+    }
+    .nav-actions { display: flex; gap: 8px; align-items: center; }
+    .provider-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--paper);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      color: var(--muted);
+    }
+    .provider-btn:hover { border-color: var(--ink); color: var(--ink); }
+    .provider-btn.active {
+      border-color: var(--accent2);
+      background: #eaf3de;
+      color: #3B6D11;
+      font-weight: 700;
+    }
+    .modal-help-link {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .modal-help-link a { color: var(--accent2); text-decoration: none; font-weight: 500; }
+
+    /* --- Customization UI --- */
+    .customize-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background-color: var(--paper);
+    }
+    .customize-section label {
+      margin-top: 12px;
+      margin-bottom: 8px;
+    }
+    .customize-section label:first-child {
+      margin-top: 0;
+    }
+    .template-switcher {
+      display: flex;
+      gap: 8px;
+    }
+    .template-card {
+      flex: 1;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .template-card.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(216, 90, 48, 0.05);
+    }
+    .color-picker {
+      display: flex;
+      gap: 12px;
+    }
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .color-swatch.active {
+      border-color: var(--ink);
+    }
+    .font-selector {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      background: var(--surface);
+      cursor: pointer;
+      outline: none;
+    }
+    .font-selector:focus {
+      border-color: var(--accent);
+    }
+    .visibility-toggles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .toggle-pill {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .toggle-pill.active {
+      background: var(--accent);
+      color: var(--surface);
+      border-color: var(--accent);
+    }
+    .btn-pdf {
+      background-color: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--ink);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+    .btn-pdf:hover {
+      opacity: 0.8;
+    }
+    .btn-pdf:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* --- Template Variations --- */
+    .template-minimal .resume-header {
+      background-color: var(--surface);
+      color: var(--ink);
+      border-bottom: 1px solid var(--ink);
+      padding-bottom: 24px;
+    }
+    .template-minimal .resume-subtitle,
+    .template-minimal .resume-contact {
+      color: var(--ink);
+      opacity: 0.8;
+    }
+    .template-minimal .resume-aside {
+      background-color: var(--surface);
+    }
+
+    .template-bold {
+      display: grid;
+      grid-template-areas: 
+        "header main"
+        "aside  main";
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: auto 1fr;
+    }
+    .template-bold .resume-header {
+      grid-area: header;
+      background-color: var(--resume-accent);
+      color: var(--surface);
+      padding: 32px 24px;
+    }
+    .template-bold .resume-body {
+      display: contents;
+    }
+    .template-bold .resume-aside {
+      grid-area: aside;
+      background-color: var(--resume-accent);
+      color: var(--surface);
+      border-left: none;
+      padding-top: 0;
+    }
+    .template-bold .resume-main {
+      grid-area: main;
+      background-color: var(--surface);
+    }
+    .template-bold .resume-aside .section-title {
+      color: var(--surface);
+      border-bottom-color: rgba(255,255,255,0.4);
+    }
+    .template-bold .resume-aside .pill {
+      background: rgba(255,255,255,0.15);
+      color: var(--surface);
+      border-color: transparent;
+    }
+    .template-bold .resume-aside .preview-text,
+    .template-bold .resume-aside .entry-title,
+    .template-bold .resume-aside .entry-subtitle,
+    .template-bold .resume-aside .entry-date {
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* --- Print Styles --- */
+    @media print {
+      @page { margin: 0; size: A4; }
+      body { margin: 0 !important; padding: 0 !important; }
+      .resume-sheet {
+        width: 100% !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        min-height: 100vh;
+      }
+    }
+
+    .force-hide {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-logo">
+      <span class="dot">●</span> folio.
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-target="resume-tab">Resume</button>
+      <button class="nav-tab" data-target="portfolio-tab">Portfolio</button>
+      <button class="nav-tab" data-target="coach-tab">AI Coach</button>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-settings" id="btn-open-settings" title="AI Configuration">
+        <i class="ti ti-settings-automation"></i> AI Settings
+      </button>
+      <button class="btn-pdf" id="btn-download-pdf">
+        ⬇ Download PDF
+      </button>
+      <button class="btn-primary" id="btn-generate-all">
+        <i class="ti ti-sparkles"></i> ✦ Generate with AI
+      </button>
+    </div>
+  </nav>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-card" style="width: 500px;">
+      <div class="modal-title">🤖 AI Configuration</div>
+      <p class="modal-subtitle" id="modal-subtitle-text">
+        Choose how you want to power your AI features. Some options are completely free and don't require an API key.
+      </p>
+      
+      <div id="key-status" class="key-status"></div>
+
+      <label style="margin-bottom:8px;">Select Provider</label>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:16px;">
+        <button class="provider-btn active" id="btn-provider-gemini" data-provider="gemini">
+          <i class="ti ti-diamond"></i> Gemini API
+        </button>
+        <button class="provider-btn" id="btn-provider-openai" data-provider="openai">
+          <i class="ti ti-brain"></i> OpenAI API
+        </button>
+      </div>
+
+      <div id="provider-config-area">
+        <!-- Gemini/OpenAI Key Input -->
+        <div id="config-keys" style="display:block;">
+          <p class="modal-help-link" id="modal-help-link"></p>
+          <label id="modal-key-label">API Key</label>
+          <div class="modal-input-wrap">
+            <input type="password" id="modal-api-key" placeholder="..." autocomplete="off">
+            <button class="modal-toggle-vis" id="btn-toggle-vis" title="Show/Hide key">
+              <i class="ti ti-eye" id="vis-icon"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-modal-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-modal-save"><i class="ti ti-check"></i> Save &amp; Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="app-container">
+    <!-- SIDEBAR (RESUME) -->
+    <aside class="sidebar" id="sidebar">
+      
+      <!-- CUSTOMIZATION -->
+      <div class="customize-section">
+        <label>Template</label>
+        <div class="template-switcher" id="template-switcher">
+          <div class="template-card active" data-template="classic">Classic</div>
+          <div class="template-card" data-template="minimal">Minimal</div>
+          <div class="template-card" data-template="bold">Bold</div>
+        </div>
+
+        <label>Accent Color</label>
+        <div class="color-picker" id="color-picker">
+          <div class="color-swatch active" style="background-color: #d85a30;" data-color="#d85a30" title="Terracotta"></div>
+          <div class="color-swatch" style="background-color: #2C4A8C;" data-color="#2C4A8C" title="Royal Blue"></div>
+          <div class="color-swatch" style="background-color: #1D9E75;" data-color="#1D9E75" title="Emerald"></div>
+          <div class="color-swatch" style="background-color: #7B3FA0;" data-color="#7B3FA0" title="Amethyst"></div>
+          <div class="color-swatch" style="background-color: #4A6B7A;" data-color="#4A6B7A" title="Slate"></div>
+          <div class="color-swatch" style="background-color: #1a1a2e;" data-color="#1a1a2e" title="Midnight"></div>
+          <div class="color-swatch" style="background-color: #c0392b;" data-color="#c0392b" title="Crimson"></div>
+          <div class="color-swatch" style="background-color: #e67e22;" data-color="#e67e22" title="Carrot"></div>
+          <div class="color-swatch" style="background-color: #2ecc71;" data-color="#2ecc71" title="Nephritis"></div>
+          <div class="color-swatch" style="background-color: #3498db;" data-color="#3498db" title="Peter River"></div>
+          <div style="display:flex; align-items:center; gap:8px; margin-left:4px;">
+            <input type="color" id="custom-color-picker" style="width:28px; height:28px; padding:0; border:none; border-radius:50%; cursor:pointer; background:none;" value="#d85a30">
+          </div>
+        </div>
+
+        <label>Heading Font</label>
+        <select id="font-selector" class="font-selector">
+          <option value="DM Serif Display">DM Serif Display</option>
+          <option value="Playfair Display">Playfair Display</option>
+          <option value="Cormorant Garamond">Cormorant Garamond</option>
+          <option value="Josefin Sans">Josefin Sans</option>
+          <option value="Raleway">Raleway</option>
+        </select>
+
+        <label>Show Sections</label>
+        <div class="visibility-toggles" id="visibility-toggles">
+          <button class="toggle-pill active" data-section="section-summary">Summary</button>
+          <button class="toggle-pill active" data-section="section-exp">Experience</button>
+          <button class="toggle-pill active" data-section="section-proj">Projects</button>
+          <button class="toggle-pill active" data-section="section-skills">Skills</button>
+          <button class="toggle-pill active" data-section="section-langs">Languages</button>
+          <button class="toggle-pill active" data-section="section-certs">Certifications</button>
+        </div>
+      </div>
+
+      <details open>
+        <summary>Personal Info</summary>
+        <div class="section-content">
+          <label>Full Name</label>
+          <input type="text" id="in-name" placeholder="John Doe">
+          <label>Target Role</label>
+          <input type="text" id="in-role" placeholder="Software Engineer">
+          <div class="form-row">
+            <div><label>Email</label><input type="email" id="in-email" placeholder="john@example.com"></div>
+            <div><label>Phone</label><input type="text" id="in-phone" placeholder="(123) 456-7890"></div>
+          </div>
+          <label>LinkedIn/GitHub</label>
+          <input type="text" id="in-links" placeholder="github.com/johndoe">
+          <label>Location</label>
+          <input type="text" id="in-location" placeholder="New York, NY">
+        </div>
+      </details>
+      <details>
+        <summary>Summary</summary>
+        <div class="section-content">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">About you</label>
+            <button class="btn-ai" id="btn-ai-summary"><i class="ti ti-sparkles"></i> ✦ AI</button>
+          </div>
+          <textarea id="in-summary" placeholder="Brief professional summary..."></textarea>
+        </div>
+      </details>
+      <details>
+        <summary>Education</summary>
+        <div class="section-content">
+          <label>Institution</label>
+          <input type="text" id="in-edu-inst" placeholder="University of Technology">
+          <label>Degree</label>
+          <input type="text" id="in-edu-deg" placeholder="B.S. Computer Science">
+          <div class="form-row">
+            <div><label>Year</label><input type="text" id="in-edu-year" placeholder="2020 - 2024"></div>
+            <div><label>GPA</label><input type="text" id="in-edu-gpa" placeholder="3.8"></div>
+          </div>
+        </div>
+      </details>
+      <details>
+        <summary>Experience</summary>
+        <div class="section-content">
+          <div id="exp-list"></div>
+          <button class="btn-dashed" id="btn-add-exp">+ Add Experience</button>
+        </div>
+      </details>
+      <details>
+        <summary>Skills</summary>
+        <div class="section-content">
+          <label>Skills (comma separated)</label>
+          <textarea id="in-skills" placeholder="JavaScript, React, Node.js"></textarea>
+          <label>Languages</label>
+          <input type="text" id="in-langs" placeholder="English, Spanish">
+        </div>
+      </details>
+      <details>
+        <summary>Projects</summary>
+        <div class="section-content">
+          <div id="proj-list"></div>
+          <button class="btn-dashed" id="btn-add-proj">+ Add Project</button>
+        </div>
+      </details>
+      <details>
+        <summary>Certifications & Awards</summary>
+        <div class="section-content">
+          <textarea id="in-certs" placeholder="AWS Certified Developer&#10;Dean's List 2023"></textarea>
+        </div>
+      </details>
+    </aside>
+
+    <!-- MAIN CANVAS -->
+    <section class="canvas-area">
+      <!-- RESUME TAB -->
+      <div id="resume-tab" class="tab-content active">
+        <div class="resume-sheet">
+          <div class="resume-header">
+            <h1 class="resume-name" id="prev-name">Your Name</h1>
+            <div class="resume-subtitle" id="prev-role">Target Role | University</div>
+            <div class="resume-contact" id="prev-contact"></div>
+          </div>
+          <div class="resume-body">
+            <div class="resume-main">
+              <div class="preview-section" id="section-summary" style="display:none;">
+                <div class="section-title">About</div>
+                <div class="preview-text" id="prev-summary"></div>
+              </div>
+              <div class="preview-section" id="section-exp" style="display:none;">
+                <div class="section-title">Experience</div>
+                <div id="prev-exp-container"></div>
+              </div>
+              <div class="preview-section" id="section-proj" style="display:none;">
+                <div class="section-title">Projects</div>
+                <div id="prev-proj-container"></div>
+              </div>
+            </div>
+            <div class="resume-aside">
+              <div class="preview-section" id="section-edu" style="display:none;">
+                <div class="section-title">Education</div>
+                <div id="prev-edu"></div>
+              </div>
+              <div class="preview-section" id="section-skills" style="display:none;">
+                <div class="section-title">Skills</div>
+                <div class="pill-list" id="prev-skills"></div>
+              </div>
+              <div class="preview-section" id="section-langs" style="display:none;">
+                <div class="section-title">Languages</div>
+                <div class="pill-list" id="prev-langs"></div>
+              </div>
+              <div class="preview-section" id="section-certs" style="display:none;">
+                <div class="section-title">Certifications</div>
+                <div class="preview-text" id="prev-certs" style="font-size:0.85rem;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO TAB -->
+      <div id="portfolio-tab" class="tab-content">
+        <div class="portfolio-header">
+          <h2 style="font-family: var(--font-heading); font-size: 2rem;">Projects Portfolio</h2>
+          <button class="btn-primary" id="btn-enhance-portfolio"><i class="ti ti-sparkles"></i> ✦ Enhance
+            Descriptions</button>
+        </div>
+        <div class="portfolio-grid" id="portfolio-grid">
+          <!-- dynamically rendered -->
+        </div>
+      </div>
+
+      <!-- AI COACH TAB -->
+      <div id="coach-tab" class="tab-content">
+        <div class="coach-container">
+          <div class="coach-header">
+            <div class="coach-title">AI Career Coach</div>
+            <div class="badge-green"><i class="ti ti-sparkles"></i> Powered by AI</div>
+          </div>
+          <div class="coach-actions">
+            <button class="action-btn coach-action"
+              data-prompt="Please review my resume data and give me 3 actionable tips to improve it.">
+              <i class="ti ti-file-search"></i> Resume Review
+            </button>
+            <button class="action-btn coach-action"
+              data-prompt="Analyze my resume as an ATS system. Give me a score out of 100 and tell me what keywords I'm missing.">
+              <i class="ti ti-target"></i> ATS Score & Tips
+            </button>
+            <button class="action-btn coach-action"
+              data-prompt="Look at my experience bullet points and rewrite them to be more impactful using the XYZ formula.">
+              <i class="ti ti-writing"></i> Improve Bullet Points
+            </button>
+            <button class="action-btn coach-action"
+              data-prompt="Draft a general, highly professional cover letter based on my resume context.">
+              <i class="ti ti-mail-forward"></i> Draft Cover Letter
+            </button>
+          </div>
+          <div class="chat-feed" id="chat-feed">
+            <div class="chat-message">Hello! I'm your AI Career Coach. How can I help you improve your profile today?
+            </div>
+          </div>
+          <div class="coach-input">
+            <input type="text" id="coach-input-field" placeholder="Ask a custom question...">
+            <button class="btn-ask" id="btn-ask-coach">Ask <i class="ti ti-arrow-up-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- TEMPLATES -->
+  <template id="exp-template">
+    <div class="dynamic-item exp-item">
+      <button type="button" class="btn-remove" onclick="removeParent(this, '.exp-item')"><i
+          class="ti ti-x"></i></button>
+      <div class="form-row">
+        <div>
+          <label>Company</label>
+          <input type="text" class="in-exp-comp" placeholder="e.g. Google">
+        </div>
+        <div>
+          <label>Dates</label>
+          <input type="text" class="in-exp-dates" placeholder="2021 - Present">
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <label>Role</label>
+        <input type="text" class="in-exp-role" placeholder="e.g. Software Engineer">
+      </div>
+      <div style="margin-top:8px;">
+        <label>Description</label>
+        <textarea class="in-exp-desc" placeholder="What did you do?"></textarea>
+      </div>
+    </div>
+  </template>
+
+  <template id="proj-template">
+    <div class="dynamic-item proj-item">
+      <button type="button" class="btn-remove" onclick="removeParent(this, '.proj-item')"><i
+          class="ti ti-x"></i></button>
+      <div>
+        <label>Project Name</label>
+        <input type="text" class="in-proj-name" placeholder="e.g. Portfolio App">
+      </div>
+      <div style="margin-top:8px;">
+        <label>Tech Stack (comma separated)</label>
+        <input type="text" class="in-proj-tech" placeholder="e.g. React, Node.js">
+      </div>
+      <div style="margin-top:8px;">
+        <label>Description</label>
+        <textarea class="in-proj-desc" placeholder="Describe the project..."></textarea>
+      </div>
+    </div>
+  </template>
+
+  <!-- SCRIPTS -->
+  <script>
+    // ==========================================
+    // API CONFIGURATION (Multi-Provider)
+    // ==========================================
+    const LS_KEY_GEMINI = 'folio_gemini_api_key';
+    const LS_KEY_OPENAI = 'folio_openai_api_key';
+    const LS_KEY_PROVIDER = 'folio_ai_provider';
+
+    let GEMINI_API_KEY = localStorage.getItem(LS_KEY_GEMINI) || 'AIzaSyD35MCN6kY7ISVujnXf-mmfk658-RZbW18';
+    let OPENAI_API_KEY = localStorage.getItem(LS_KEY_OPENAI) || '';
+    let AI_PROVIDER = localStorage.getItem(LS_KEY_PROVIDER) || 'gemini';
+
+    // --- Settings Modal Logic ---
+    const modalOverlay   = document.getElementById('modal-overlay');
+    const modalInput     = document.getElementById('modal-api-key');
+    const keyStatusEl    = document.getElementById('key-status');
+    const btnToggleVis   = document.getElementById('btn-toggle-vis');
+    const visIcon        = document.getElementById('vis-icon');
+    const modalKeyLabel  = document.getElementById('modal-key-label');
+    const modalHelpLink  = document.getElementById('modal-help-link');
+    let modalProvider    = AI_PROVIDER;
+
+    function updateModalForProvider(provider) {
+      modalProvider = provider;
+      document.querySelectorAll('.provider-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(`btn-provider-${provider}`);
+      if(btn) btn.classList.add('active');
+      
+      const configKeys = document.getElementById('config-keys');
+      if(configKeys) configKeys.style.display = 'block';
+
+      if (provider === 'openai') {
+        modalKeyLabel.textContent = 'Your OpenAI API Key';
+        modalInput.placeholder = 'sk-...';
+        modalInput.value = OPENAI_API_KEY;
+        modalHelpLink.innerHTML = 'Get a key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>';
+      } else {
+        modalKeyLabel.textContent = 'Your Gemini API Key';
+        modalInput.placeholder = 'AIza...';
+        modalInput.value = GEMINI_API_KEY;
+        modalHelpLink.innerHTML = 'Get a <strong>free</strong> key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>';
+      }
+    }
+
+    function openSettingsModal(msg, isErr) {
+      updateModalForProvider(AI_PROVIDER);
+      if (msg) {
+        keyStatusEl.textContent = msg;
+        keyStatusEl.className = 'key-status ' + (isErr ? 'err' : 'ok');
+      } else {
+        keyStatusEl.className = 'key-status';
+      }
+      modalOverlay.classList.add('visible');
+      setTimeout(() => modalInput.focus(), 100);
+    }
+
+    function closeSettingsModal() {
+      modalOverlay.classList.remove('visible');
+    }
+
+    document.querySelectorAll('.provider-btn').forEach(btn => {
+      btn.addEventListener('click', () => updateModalForProvider(btn.dataset.provider));
+    });
+
+    document.getElementById('btn-open-settings').addEventListener('click', () => openSettingsModal());
+    document.getElementById('btn-modal-cancel').addEventListener('click', closeSettingsModal);
+    modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeSettingsModal(); });
+
+    btnToggleVis.addEventListener('click', () => {
+      const isHidden = modalInput.type === 'password';
+      modalInput.type = isHidden ? 'text' : 'password';
+      visIcon.className = isHidden ? 'ti ti-eye-off' : 'ti ti-eye';
+    });
+
+    document.getElementById('btn-modal-save').addEventListener('click', () => {
+      AI_PROVIDER = modalProvider;
+      localStorage.setItem(LS_KEY_PROVIDER, AI_PROVIDER);
+      
+      if (modalProvider === 'openai') {
+        OPENAI_API_KEY = modalInput.value.trim();
+        localStorage.setItem(LS_KEY_OPENAI, OPENAI_API_KEY);
+      } else if (modalProvider === 'gemini') {
+        GEMINI_API_KEY = modalInput.value.trim();
+        localStorage.setItem(LS_KEY_GEMINI, GEMINI_API_KEY);
+      }
+      
+      const providerNames = {
+        'gemini': 'Gemini API',
+        'openai': 'OpenAI API'
+      };
+      
+      keyStatusEl.textContent = `✓ ${providerNames[AI_PROVIDER]} selected!`;
+      keyStatusEl.className = 'key-status ok';
+      setTimeout(closeSettingsModal, 1200);
+    });
+
+    // Auto-open modal on first visit if no key stored for active provider
+    const hasActiveKey = (AI_PROVIDER === 'openai' ? OPENAI_API_KEY : GEMINI_API_KEY);
+    if (!hasActiveKey) {
+      window.addEventListener('load', () => openSettingsModal('No API key found. Please add yours to use AI features.', true));
+    }
+
+    // ==========================================
+    // DOM ELEMENTS
+    // ==========================================
+    const tabs = document.querySelectorAll('.nav-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const sidebar = document.getElementById('sidebar');
+
+    const inputs = {
+      name: document.getElementById('in-name'),
+      role: document.getElementById('in-role'),
+      email: document.getElementById('in-email'),
+      phone: document.getElementById('in-phone'),
+      links: document.getElementById('in-links'),
+      location: document.getElementById('in-location'),
+      summary: document.getElementById('in-summary'),
+      eduInst: document.getElementById('in-edu-inst'),
+      eduDeg: document.getElementById('in-edu-deg'),
+      eduYear: document.getElementById('in-edu-year'),
+      eduGpa: document.getElementById('in-edu-gpa'),
+      skills: document.getElementById('in-skills'),
+      langs: document.getElementById('in-langs'),
+      certs: document.getElementById('in-certs')
+    };
+
+    const preview = {
+      name: document.getElementById('prev-name'),
+      role: document.getElementById('prev-role'),
+      contactRow: document.getElementById('prev-contact'),
+      summary: document.getElementById('prev-summary'),
+      edu: document.getElementById('prev-edu'),
+      skills: document.getElementById('prev-skills'),
+      langs: document.getElementById('prev-langs'),
+      certs: document.getElementById('prev-certs'),
+      expContainer: document.getElementById('prev-exp-container'),
+      projContainer: document.getElementById('prev-proj-container')
+    };
+
+    const sections = {
+      summary: document.getElementById('section-summary'),
+      exp: document.getElementById('section-exp'),
+      proj: document.getElementById('section-proj'),
+      edu: document.getElementById('section-edu'),
+      skills: document.getElementById('section-skills'),
+      langs: document.getElementById('section-langs'),
+      certs: document.getElementById('section-certs')
+    };
+
+    // ==========================================
+    // UI LOGIC
+    // ==========================================
+    function switchTab(tabId) {
+      tabs.forEach(t => t.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+
+      document.querySelector(`[data-target="${tabId}"]`).classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+
+      if (tabId === 'resume-tab') {
+        sidebar.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('hidden');
+      }
+
+      if (tabId === 'portfolio-tab') {
+        renderPortfolio();
+      }
+    }
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.target));
+    });
+
+    Object.values(inputs).forEach(input => {
+      input.addEventListener('input', liveUpdate);
+    });
+
+    function liveUpdate() {
+      // Basic Info
+      preview.name.textContent = inputs.name.value || 'Your Name';
+      const roleStr = inputs.role.value || 'Target Role';
+      const uniStr = inputs.eduInst.value || 'University';
+      preview.role.innerHTML = `${roleStr} <span style="opacity:0.5; margin:0 8px;">|</span> ${uniStr}`;
+
+      // Contact
+      let contacts = [];
+      if (inputs.email.value) contacts.push(`<span><i class="ti ti-mail"></i> ${inputs.email.value}</span>`);
+      if (inputs.phone.value) contacts.push(`<span><i class="ti ti-phone"></i> ${inputs.phone.value}</span>`);
+      if (inputs.location.value) contacts.push(`<span><i class="ti ti-map-pin"></i> ${inputs.location.value}</span>`);
+      if (inputs.links.value) contacts.push(`<span><i class="ti ti-link"></i> ${inputs.links.value}</span>`);
+      preview.contactRow.innerHTML = contacts.join(' <span class="contact-dot">●</span> ');
+
+      // Summary
+      preview.summary.textContent = inputs.summary.value;
+      sections.summary.style.display = inputs.summary.value ? 'block' : 'none';
+
+      // Education
+      const hasEdu = inputs.eduInst.value || inputs.eduDeg.value;
+      sections.edu.style.display = hasEdu ? 'block' : 'none';
+      const gpaStr = inputs.eduGpa.value ? ` | GPA: ${inputs.eduGpa.value}` : '';
+      preview.edu.innerHTML = `
+        <div class="entry-title">${inputs.eduDeg.value}</div>
+        <div class="entry-subtitle">${inputs.eduInst.value}</div>
+        <div class="entry-date">${inputs.eduYear.value}${gpaStr}</div>
+      `;
+
+      // Skills
+      const skillArr = inputs.skills.value.split(',').filter(s => s.trim() !== '');
+      sections.skills.style.display = skillArr.length ? 'block' : 'none';
+      preview.skills.innerHTML = skillArr.map(s => `<span class="pill">${s.trim()}</span>`).join('');
+
+      // Languages
+      const langArr = inputs.langs.value.split(',').filter(s => s.trim() !== '');
+      sections.langs.style.display = langArr.length ? 'block' : 'none';
+      preview.langs.innerHTML = langArr.map(s => `<span class="pill">${s.trim()}</span>`).join('');
+
+      // Certs
+      preview.certs.textContent = inputs.certs.value;
+      sections.certs.style.display = inputs.certs.value ? 'block' : 'none';
+
+      // Dynamic updates
+      updateExperiencesPreview();
+      updateProjectsPreview();
+    }
+
+    // Dynamic Lists Helpers
+    function getExpData() {
+      const exps = [];
+      document.querySelectorAll('.exp-item').forEach(item => {
+        exps.push({
+          company: item.querySelector('.in-exp-comp').value,
+          dates: item.querySelector('.in-exp-dates').value,
+          role: item.querySelector('.in-exp-role').value,
+          desc: item.querySelector('.in-exp-desc').value
+        });
+      });
+      return exps;
+    }
+
+    function updateExperiencesPreview() {
+      const data = getExpData().filter(e => e.company || e.role);
+      sections.exp.style.display = data.length ? 'block' : 'none';
+      preview.expContainer.innerHTML = data.map(exp => `
+        <div class="entry">
+          <div class="entry-header">
+            <div class="entry-title">${exp.role}</div>
+            <div class="entry-date">${exp.dates}</div>
+          </div>
+          <div class="entry-subtitle">${exp.company}</div>
+          <div class="preview-text">${exp.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    function getProjData() {
+      const projs = [];
+      document.querySelectorAll('.proj-item').forEach(item => {
+        projs.push({
+          name: item.querySelector('.in-proj-name').value,
+          tech: item.querySelector('.in-proj-tech').value,
+          desc: item.querySelector('.in-proj-desc').value
+        });
+      });
+      return projs;
+    }
+
+    function updateProjectsPreview() {
+      const data = getProjData().filter(p => p.name || p.desc);
+      sections.proj.style.display = data.length ? 'block' : 'none';
+      preview.projContainer.innerHTML = data.map(proj => `
+        <div class="entry">
+          <div class="entry-header">
+            <div class="entry-title">${proj.name}</div>
+          </div>
+          <div class="entry-subtitle">${proj.tech}</div>
+          <div class="preview-text">${proj.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderPortfolio() {
+      const grid = document.getElementById('portfolio-grid');
+      const data = getProjData().filter(p => p.name || p.desc);
+
+      if (data.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <i class="ti ti-folder-off"></i>
+            <h3>No projects yet</h3>
+            <p>Add some projects in the Resume tab to see them here.</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = data.map(proj => {
+        const techPills = proj.tech.split(',').filter(t => t.trim()).map(t => `<span class="tech-pill">${t.trim()}</span>`).join('');
+        return `
+          <div class="project-card">
+            <h3 class="project-card-title">${proj.name}</h3>
+            <div class="project-card-tech">${techPills}</div>
+            <p class="project-card-desc">${proj.desc}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Dynamic Form Handlers
+    document.getElementById('btn-add-exp').addEventListener('click', () => {
+      const template = document.getElementById('exp-template').content.cloneNode(true);
+      template.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', liveUpdate));
+      document.getElementById('exp-list').appendChild(template);
+      liveUpdate();
+    });
+
+    document.getElementById('btn-add-proj').addEventListener('click', () => {
+      const template = document.getElementById('proj-template').content.cloneNode(true);
+      template.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', liveUpdate));
+      document.getElementById('proj-list').appendChild(template);
+      liveUpdate();
+    });
+
+    window.removeParent = function (btn, selector) {
+      btn.closest(selector).remove();
+      liveUpdate();
+    }
+
+    // Initialize
+    function init() {
+      document.getElementById('btn-add-exp').click();
+      document.getElementById('btn-add-proj').click();
+      liveUpdate();
+    }
+    init();
+
+    // ==========================================
+    // AI INTEGRATION (Multi-Provider)
+    // ==========================================
+
+    // Unified AI call — routes to selected provider
+    async function callAI(prompt, isJson = false) {
+      console.log(`AI Call [${AI_PROVIDER}]: ${prompt.substring(0, 50)}...`);
+      
+      if (AI_PROVIDER === 'openai') {
+        return callOpenAIAPI(prompt, isJson);
+      }
+      return callGeminiAPI(prompt, isJson);
+    }
+
+    // Keep backward compat alias
+    const callGemini = callAI;
+
+    // --- OpenAI Provider ---
+    async function callOpenAIAPI(prompt, isJson = false, retries = 2) {
+      const apiKey = (OPENAI_API_KEY || '').trim();
+      if (!apiKey) {
+        openSettingsModal('No OpenAI API key set. Please enter your key to use AI features.', true);
+        throw new Error('No OpenAI API key. Please enter your key in the API Key settings.');
+      }
+
+      const models = ['gpt-4o-mini', 'gpt-3.5-turbo'];
+
+      for (const model of models) {
+        for (let i = 0; i < retries; i++) {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: model,
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.7,
+              max_tokens: 2048
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+
+            // Rate limit — wait and retry
+            if (response.status === 429 && i < retries - 1) {
+              const waitMs = 10000;
+              console.warn(`OpenAI rate limited on ${model}. Waiting ${waitMs / 1000}s...`);
+              await new Promise(r => setTimeout(r, waitMs));
+              continue;
+            }
+
+            // Quota / billing
+            if (response.status === 429) {
+              console.warn(`Quota exhausted on ${model}. Trying next model...`);
+              break;
+            }
+
+            // Invalid key
+            if (response.status === 401 || response.status === 403) {
+              openSettingsModal('Invalid or unauthorized OpenAI API key. Please check your key.', true);
+              throw new Error('Invalid OpenAI API key. Please update it in the API Key settings.');
+            }
+
+            const errText = errData?.error?.message || `${response.status}`;
+            throw new Error(`OpenAI API Error (${model}): ${errText}`);
+          }
+
+          const data = await response.json();
+          console.log(`✓ Using OpenAI model: ${model}`);
+          return data.choices[0].message.content;
+        }
+      }
+
+      openSettingsModal('⚠ OpenAI API quota exhausted. Please check your billing or try a different key.', true);
+      throw new Error('OpenAI API quota exhausted. Please check your billing or use a different key.');
+    }
+
+    // --- Gemini Provider ---
+    async function callGeminiAPI(prompt, isJson = false, retries = 2) {
+      const apiKey = (GEMINI_API_KEY || '').trim();
+      if (!apiKey) {
+        openSettingsModal('No Gemini API key set. Please enter your key to use AI features.', true);
+        throw new Error('No Gemini API key. Please enter your key in the API Key settings.');
+      }
+
+      const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'];
+
+      for (const model of models) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        for (let i = 0; i < retries; i++) {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }]
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            const status = errData?.error?.status || '';
+
+            if (response.status === 429 && status === 'RESOURCE_EXHAUSTED') {
+              console.warn(`Quota exhausted on ${model}. Trying next model...`);
+              break;
+            }
+
+            if (response.status === 429 && i < retries - 1) {
+              const retryDelay = errData?.error?.details?.find(d => d.retryDelay)?.retryDelay;
+              const waitMs = retryDelay ? (parseInt(retryDelay) * 1000) : 10000;
+              console.warn(`Rate limited. Waiting ${waitMs / 1000}s before retry...`);
+              await new Promise(r => setTimeout(r, Math.min(waitMs, 20000)));
+              continue;
+            }
+
+            if (response.status === 400 || response.status === 403) {
+              openSettingsModal('Invalid or unauthorized API key. Please check your key.', true);
+              throw new Error('Invalid API key. Please update it in the API Key settings.');
+            }
+
+            const errText = errData?.error?.message || `${response.status}`;
+            throw new Error(`API Error (${model}): ${errText}`);
+          }
+
+          const data = await response.json();
+          console.log(`✓ Using Gemini model: ${model}`);
+          return data.candidates[0].content.parts[0].text;
+        }
+      }
+
+      openSettingsModal(
+        '⚠ All Gemini free-tier quotas are exhausted for today. Try again tomorrow, or use a different API key.',
+        true
+      );
+      throw new Error('All Gemini model quotas exhausted. Please try again tomorrow or use a new API key.');
+    }
+
+    // 1. AI Summary
+    document.getElementById('btn-ai-summary').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      btn.disabled = true;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="ti ti-loader"></i> ...';
+
+      try {
+        const prompt = `Write a 2-3 sentence professional resume summary for:
+        Name: ${inputs.name.value}
+        Role: ${inputs.role.value}
+        Skills: ${inputs.skills.value}
+        Education: ${inputs.eduInst.value}
+        Keep it impactful and action-oriented.`;
+
+        const res = await callGemini(prompt);
+        inputs.summary.value = res.trim();
+        liveUpdate();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
+
+    // 2. Generate All (Navbar Button)
+    document.getElementById('btn-generate-all').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      btn.disabled = true;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="ti ti-loader"></i> Generating...';
+
+      try {
+        const exps = getExpData();
+        const projs = getProjData();
+
+        const prompt = `
+        Act as an expert resume writer. I have partial resume data.
+        Name: ${inputs.name.value}
+        Role: ${inputs.role.value}
+        Skills: ${inputs.skills.value}
+        Experience entries: ${JSON.stringify(exps)}
+        Project entries: ${JSON.stringify(projs)}
+
+        Generate a highly professional summary, and improve the descriptions for the experiences (make them action-oriented bullets) and projects.
+        Return only raw JSON, no markdown, no backticks, no extra text.
+        Format:
+        {
+          "summary": "...",
+          "exp_bullets": ["desc for exp 1", "desc for exp 2", ...],
+          "proj_bullets": ["desc for proj 1", "desc for proj 2", ...]
+        }`;
+
+        const res = await callGemini(prompt, true);
+        const clean = res.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(clean);
+
+        if (parsed.summary) inputs.summary.value = parsed.summary;
+
+        const expItems = document.querySelectorAll('.exp-item .in-exp-desc');
+        parsed.exp_bullets?.forEach((bullet, i) => {
+          if (expItems[i]) expItems[i].value = bullet;
+        });
+
+        const projItems = document.querySelectorAll('.proj-item .in-proj-desc');
+        parsed.proj_bullets?.forEach((bullet, i) => {
+          if (projItems[i]) projItems[i].value = bullet;
+        });
+
+        liveUpdate();
+      } catch (err) {
+        alert(err.message);
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
+
+    // 3. Enhance Portfolio
+    document.getElementById('btn-enhance-portfolio').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      btn.disabled = true;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="ti ti-loader"></i> Enhancing...';
+
+      try {
+        const projs = getProjData();
+        const prompt = `
+        Act as a tech portfolio copywriter. Improve these project descriptions to sound impressive to recruiters.
+        Projects: ${JSON.stringify(projs)}
+        Return only raw JSON, no markdown, no backticks, no extra text.
+        Format:
+        [
+          {"name": "proj1 name", "description": "improved desc..."}
+        ]`;
+
+        const res = await callGemini(prompt, true);
+        const clean = res.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(clean);
+
+        const projItems = document.querySelectorAll('.proj-item');
+        parsed.forEach((p, i) => {
+          if (projItems[i]) {
+            projItems[i].querySelector('.in-proj-name').value = p.name;
+            projItems[i].querySelector('.in-proj-desc').value = p.description;
+          }
+        });
+
+        liveUpdate();
+        renderPortfolio();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
+
+    // 4. AI Coach
+    const chatFeed = document.getElementById('chat-feed');
+    const coachBtnAsk = document.getElementById('btn-ask-coach');
+    const coachInput = document.getElementById('coach-input-field');
+
+    function formatMarkdown(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^### (.*$)/gim, '<strong>$1</strong>')
+        .replace(/^## (.*$)/gim, '<strong>$1</strong>');
+    }
+
+    function addChatMessage(text, isUser = false) {
+      const msg = document.createElement('div');
+      msg.className = `chat-message ${isUser ? 'chat-user' : ''}`;
+      
+      if (isUser) {
+        msg.textContent = text;
+      } else {
+        msg.innerHTML = formatMarkdown(text);
+      }
+      
+      chatFeed.appendChild(msg);
+      // Auto-scroll to the bottom for natural chat sequence
+      chatFeed.scrollTop = chatFeed.scrollHeight;
+    }
+
+    async function askCoach(question) {
+      if (!question.trim()) return;
+
+      addChatMessage(question, true);
+      coachInput.value = '';
+      coachBtnAsk.disabled = true;
+
+      const exps = getExpData();
+      const context = `Resume Context: Name: ${inputs.name.value}, Role: ${inputs.role.value}, Skills: ${inputs.skills.value}, Experience: ${JSON.stringify(exps)}`;
+      const prompt = `You are an AI Career Coach. Use this context about the user if helpful: ${context}\n\nUser asks: ${question}\n\nProvide a concise, helpful, and professional response.`;
+
+      try {
+        const res = await callGemini(prompt);
+        addChatMessage(res, false);
+      } catch (err) {
+        addChatMessage("Error: " + err.message, false);
+      } finally {
+        coachBtnAsk.disabled = false;
+      }
+    }
+
+    document.querySelectorAll('.coach-action').forEach(btn => {
+      btn.addEventListener('click', () => {
+        askCoach(btn.dataset.prompt);
+      });
+    });
+
+    coachBtnAsk.addEventListener('click', () => askCoach(coachInput.value));
+    coachInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') askCoach(e.target.value);
+    });
+
+    // ==========================================
+    // 5. CUSTOMIZATION LOGIC
+    // ==========================================
+    const resumeSheet = document.querySelector('.resume-sheet');
+    const rootStyles = document.documentElement;
+    
+    // Templates
+    document.querySelectorAll('.template-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        resumeSheet.className = 'resume-sheet'; // reset
+        if (card.dataset.template !== 'classic') {
+          resumeSheet.classList.add(`template-${card.dataset.template}`);
+        }
+      });
+    });
+
+    // Colors
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        const color = swatch.dataset.color;
+        rootStyles.style.setProperty('--resume-accent', color);
+        document.getElementById('custom-color-picker').value = color;
+      });
+    });
+
+    document.getElementById('custom-color-picker').addEventListener('input', (e) => {
+      const color = e.target.value;
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      rootStyles.style.setProperty('--resume-accent', color);
+    });
+
+    // Fonts
+    const fontSelector = document.getElementById('font-selector');
+    fontSelector.addEventListener('change', (e) => {
+      const font = e.target.value;
+      const fontUrl = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:ital,wght@0,400;0,700;1,400&display=swap`;
+      
+      let link = document.getElementById('dynamic-font');
+      if (!link) {
+        link = document.createElement('link');
+        link.id = 'dynamic-font';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+      }
+      link.href = fontUrl;
+      rootStyles.style.setProperty('--font-heading', `"${font}", serif`);
+    });
+
+    // Visibility
+    document.querySelectorAll('.toggle-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        pill.classList.toggle('active');
+        const sectionEl = document.getElementById(pill.dataset.section);
+        if (sectionEl) {
+          if (!pill.classList.contains('active')) {
+            sectionEl.classList.add('force-hide');
+          } else {
+            sectionEl.classList.remove('force-hide');
+          }
+        }
+      });
+    });
+
+    // ==========================================
+    // 6. DOWNLOAD PDF LOGIC
+    // ==========================================
+    document.getElementById('btn-download-pdf').addEventListener('click', () => {
+      const btn = document.getElementById('btn-download-pdf');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="ti ti-loader"></i> Generating PDF...';
+      btn.disabled = true;
+
+      // Small delay to allow UI to update
+      setTimeout(() => {
+        const element = document.querySelector('.resume-sheet');
+        
+        // Configuration for html2pdf
+        const opt = {
+          margin:       0,
+          filename:     'My_Resume.pdf',
+          image:        { type: 'jpeg', quality: 1 },
+          html2canvas:  { 
+            scale: 2, 
+            useCORS: true,
+            scrollY: 0,
+            scrollX: 0
+          },
+          jsPDF:        { unit: 'px', format: [680, 960], orientation: 'portrait' }
+        };
+
+        // Temporary styling for PDF generation to ensure it looks right
+        const originalBoxShadow = element.style.boxShadow;
+        const originalTransform = element.style.transform;
+        const originalMargin = element.style.margin;
+        const originalWidth = element.style.width;
+        
+        element.style.boxShadow = 'none'; // Remove shadow for crisp edges
+        element.style.margin = '0'; // Remove centering margin
+        // Force width to prevent flexbox squishing during clone
+        element.style.width = '680px';
+        element.style.minWidth = '680px';
+        element.style.maxWidth = '680px';
+        
+        // CSS variables on :root are often lost when html2canvas clones the element.
+        // Copy the active accent color directly to the element before capturing.
+        const activeAccent = document.documentElement.style.getPropertyValue('--resume-accent') || '#d85a30';
+        element.style.setProperty('--resume-accent', activeAccent);
+        
+        html2pdf().set(opt).from(element).save().then(() => {
+          // Restore styles
+          element.style.boxShadow = originalBoxShadow;
+          element.style.transform = originalTransform;
+          element.style.margin = originalMargin;
+          element.style.width = originalWidth;
+          element.style.minWidth = '';
+          element.style.maxWidth = '';
+          element.style.removeProperty('--resume-accent');
+          
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }).catch(err => {
+          console.error('PDF Generation Error:', err);
+          alert('Failed to generate PDF. Please try again.');
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        });
+      }, 300);
+    });
+
+  </script>
+</body>
+
+</html>
